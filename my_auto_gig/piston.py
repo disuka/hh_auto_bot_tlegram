@@ -340,7 +340,7 @@ async def main():
         ts_print("--отправлено в дипсик--")
         deepseek_response = await call_deepseek_api(deepseek_api_key, full_context, incoming_text)
         if deepseek_response is None:
-            ts_print("не дождался ответа от дипсик за 5минут")
+            ts_print("не дождался ответа от  дипсик за 5минут")
             sys.exit(1)
 
         ts_print("<<<< получен ответ <<<<<<<")
