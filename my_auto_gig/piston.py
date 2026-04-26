@@ -302,7 +302,7 @@ async def main():
             return
 
         if incoming_text == "Какой у Вас желаемый уровень заработной платы?":
-            await event.reply("350000 рублей")
+            await event.reply("300000 рублей")
             ts_print("<< отправил ответ сендеру без дипсика (зп)")
             return
 
