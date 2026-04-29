@@ -1,6 +1,5 @@
 import asyncio
 import hashlib
-import os
 import re
 import sys
 import requests
@@ -158,12 +157,11 @@ async def call_deepseek_api(api_key, context_message, user_message):
         "temperature": 1.1
     }
 
-    loop = asyncio.get_running_loop()
+    def sync_post():
+        return requests.post(api_url, headers=headers, json=payload, timeout=300)
+
     try:
-        response = await loop.run_in_executor(
-            None,
-            lambda: requests.post(api_url, headers=headers, json=payload, timeout=300)
-        )
+        response = await asyncio.to_thread(sync_post)
         if response.status_code == 200:
             data = response.json()
             usage = data.get('usage', {})
@@ -253,14 +251,14 @@ async def main():
         return part1_context + "\n\n" + part2_context + "\n\n" + PART3_CONTEXT
 
     client = TelegramClient('userbot_session', api_id, api_hash)
-    await client.start()
+    await client.start()  # noqa
     ts_print("Клиент запущен, ожидаю сообщения от сендера...\n")
 
     waiting_for_response = False
     response_received_event = asyncio.Event()
     current_retries = 0
 
-    @client.on(events.NewMessage)
+    @client.on(events.NewMessage)  # type: ignore
     async def handler(event):
         nonlocal part2_context, first_message_received, waiting_for_response, response_received_event, current_retries
         sender = await event.get_sender()
@@ -301,6 +299,7 @@ async def main():
             current_retries = 0
             return
 
+        # Быстрые ответы без DeepSeek
         if incoming_text == "Какой у Вас желаемый уровень заработной платы?":
             await event.reply("300000 рублей")
             ts_print("<< отправил ответ сендеру без дипсика (зп)")
@@ -312,12 +311,9 @@ async def main():
             return
 
         if incoming_text == "Подскажите, пожалуйста, чем Вы занимались в период с июля 2023-го по июнь 2024-го?":
-            await event.reply("Это был осознанный перерыв в карьере. После десяти лет интенсивной работы в Альфа-Банке я принял решение взять паузу для переоценки профессиональных целей и отдыха. В этот период я не работал и не получал никаких денег за какую-либо работу  ни официально, ни неофициально. Я использовал это время для углубления технических навыков в качестве хобби, изучения новых подходов с помощью AI-инструментов и подготовки к следующему этапу карьеры, где смогу применить свой управленческий и аналитический опыт в полной мере.")
+            await event.reply("Это был осознанный перерыв в карьере. После десяти лет интенсивной работы в Альфа-Банке я принял решение взять паузу для переоценки профессиональных целей и отдыха. В этот период я не работал и не получал никаких денег за какую-либо работу ни официально, ни неофициально. Я использовал это время для углубления технических навыков в качестве хобби, изучения новых подходов с помощью AI-инструментов и подготовки к следующему этапу карьеры, где смогу применить свой управленческий и аналитический опыт в полной мере.")
             ts_print("<< отправил ответ сендеру без дипсика (про перерыв)")
             return
-
-
-
 
         # Первое сообщение (приветствие + вакансия)
         if not first_message_received and incoming_text.startswith("Здравствуйте, "):
@@ -340,7 +336,7 @@ async def main():
         ts_print("--отправлено в дипсик--")
         deepseek_response = await call_deepseek_api(deepseek_api_key, full_context, incoming_text)
         if deepseek_response is None:
-            ts_print("не дождался ответа от  дипсик за 5минут")
+            ts_print("не дождался ответа от дипсик за 5минут")
             sys.exit(1)
 
         ts_print("<<<< получен ответ <<<<<<<")
