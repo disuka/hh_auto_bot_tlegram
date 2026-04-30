@@ -1,0 +1,17 @@
+# Telethon session files
+*.session
+sessions/
+*.session-journal
+
+# Конфиденциальные файлы
+api_keys.cfg
+bot_log.txt
+
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Кэш Python
+__pycache__/
+*.pyc
